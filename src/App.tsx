@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { FinanceProvider } from './context/FinanceContext';
 import Layout from './components/Layout';
 import { NavTab } from './types';

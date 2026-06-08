@@ -1,5 +1,4 @@
-import React from 'react';
-import { Home, CreditCard, List, TrendingUp, DollarSign } from 'lucide-react';
+import { Home, CreditCard, List, TrendingUp, DollarSign, LucideIcon } from 'lucide-react';
 import { NavTab } from '../types';
 
 interface SidebarProps {
@@ -9,7 +8,7 @@ interface SidebarProps {
   setMobileOpen: (open: boolean) => void;
 }
 
-const navItems: { tab: NavTab; label: string; Icon: React.FC<{ size?: number; className?: string }> }[] = [
+const navItems: { tab: NavTab; label: string; Icon: LucideIcon }[] = [
   { tab: 'dashboard', label: 'Dashboard', Icon: Home },
   { tab: 'cards', label: 'Cartões', Icon: CreditCard },
   { tab: 'installments', label: 'Parcelas', Icon: List },

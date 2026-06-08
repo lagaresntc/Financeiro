@@ -1,4 +1,4 @@
-import React, { createContext, useContext, ReactNode } from 'react';
+import { createContext, useContext, ReactNode } from 'react';
 import { CreditCard, Purchase, FixedIncome, Investment } from '../types';
 import { useStorage } from '../hooks/useStorage';
 
