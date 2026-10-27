@@ -1,0 +1,7 @@
+node_modules/
+dist/
+fixtures/
+.DS_Store
+# Dados pessoais reais: nunca versionar (o repositório é público)
+data/dados-iniciais.json
+docs/PLANO.md
