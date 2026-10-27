@@ -34,4 +34,18 @@ export interface Investment {
   updatedAt: string;
 }
 
-export type NavTab = 'dashboard' | 'cards' | 'installments' | 'investments' | 'income';
+export interface BillItem {
+  id: string;
+  name: string;
+  amount: number; // 0 = valor variável
+  dueDay: number; // dia de vencimento (0 = sem dia definido)
+}
+
+export type NavTab =
+  | 'dashboard'
+  | 'simulator'
+  | 'cards'
+  | 'installments'
+  | 'checklist'
+  | 'investments'
+  | 'income';

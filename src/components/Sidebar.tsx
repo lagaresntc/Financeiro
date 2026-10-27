@@ -1,4 +1,4 @@
-import { Home, CreditCard, List, TrendingUp, DollarSign, LucideIcon } from 'lucide-react';
+import { Home, CreditCard, List, TrendingUp, DollarSign, ShoppingCart, ListChecks, LucideIcon } from 'lucide-react';
 import { NavTab } from '../types';
 
 interface SidebarProps {
@@ -10,8 +10,10 @@ interface SidebarProps {
 
 const navItems: { tab: NavTab; label: string; Icon: LucideIcon }[] = [
   { tab: 'dashboard', label: 'Dashboard', Icon: Home },
+  { tab: 'simulator', label: 'Simulador', Icon: ShoppingCart },
   { tab: 'cards', label: 'Cartões', Icon: CreditCard },
   { tab: 'installments', label: 'Parcelas', Icon: List },
+  { tab: 'checklist', label: 'Contas do Mês', Icon: ListChecks },
   { tab: 'investments', label: 'Investimentos', Icon: TrendingUp },
   { tab: 'income', label: 'Receitas Fixas', Icon: DollarSign },
 ];
