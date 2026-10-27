@@ -1,5 +1,5 @@
 import Dexie, { type Table } from 'dexie';
-import type { Centavos, Data, Mes, ParametrosPlano, Renda, Fixa, ConsignadoCfg, EstadoConsignado } from '../domain/tipos';
+import type { CartaoCfg, Centavos, Data, Mes, ParametrosPlano, ConsignadoCfg, EstadoConsignado } from '../domain/tipos';
 
 export interface CartaoDb {
   id: string;
@@ -9,6 +9,7 @@ export interface CartaoDb {
   diaFechamento: number;
   diaVencimento: number;
   vencimentos?: { aPartirDe: Mes; dia: number }[];
+  isencao?: CartaoCfg['isencao'];
   limiteCentavos?: Centavos;
   principal: boolean;
   cashbackPct?: number;
@@ -31,7 +32,10 @@ export interface LancamentoDb {
   /** Competência da `parcelaInicial` quando conhecida (seed) — senão calculada pela data. */
   faturaRef?: Mes;
   grupoParcelaId?: string;
+  /** Pagamento de uma conta fixa do plano (não conta como gasto variável). */
+  fixaId?: string;
   origem: 'manual' | 'importado' | 'seed';
+  criadoEm?: string;
 }
 
 export interface FaturaDb {
@@ -41,9 +45,8 @@ export interface FaturaDb {
   status: 'aberta' | 'fechada' | 'paga';
   saldoInformadoCentavos?: Centavos;
   dataInformado?: Data;
+  pagaEm?: Data;
 }
-
-export interface OrcamentoDb { categoria: string; valorMensalCentavos: Centavos }
 
 export interface ConsignadoDb {
   contrato: string;
@@ -52,6 +55,8 @@ export interface ConsignadoDb {
   totalParcelas: number;
   taxaMes: number;
   estado: EstadoConsignado;
+  /** Mês até o qual o desconto em folha já está refletido em `estado`. */
+  estadoEm: Mes;
 }
 
 export interface AntecipacaoDb { id?: number; data: Data | Mes; valorPagoCentavos: Centavos; deParcela: number; ateParcela: number; nota?: string }
@@ -67,13 +72,13 @@ export interface HistoricoPlanoDb { id?: number; data: string; cenarioId: string
 export interface FechamentoMesDb { competencia: Mes; planejadoGuardarCentavos: Centavos; guardadoRealCentavos: Centavos; gastoRealCentavos: Centavos }
 export interface ConfigDb { chave: string; valor: unknown }
 
+// Rendas, contas fixas, orçamento e eventos do plano ficam dentro de cada cenário (ParametrosPlano):
+// cenários diferentes podem ter rendas diferentes, e o plano não pode ter dois lugares para o mesmo dado.
+
 export class BancoFinanceiro extends Dexie {
   cartoes!: Table<CartaoDb, string>;
   lancamentos!: Table<LancamentoDb, number>;
   faturas!: Table<FaturaDb, number>;
-  rendas!: Table<Renda, string>;
-  fixas!: Table<Fixa, string>;
-  orcamento!: Table<OrcamentoDb, string>;
   consignado!: Table<ConsignadoDb, string>;
   antecipacoes!: Table<AntecipacaoDb, number>;
   metas!: Table<MetaDb, string>;
@@ -91,9 +96,6 @@ export class BancoFinanceiro extends Dexie {
       cartoes: 'id',
       lancamentos: '++id, data, forma, categoria, faturaRef, grupoParcelaId',
       faturas: '++id, [cartaoId+competencia], cartaoId, competencia, status',
-      rendas: 'id',
-      fixas: 'id',
-      orcamento: 'categoria',
       consignado: 'contrato',
       antecipacoes: '++id, data',
       metas: 'id, ordem',
@@ -109,6 +111,6 @@ export class BancoFinanceiro extends Dexie {
 }
 
 export const TABELAS = [
-  'cartoes', 'lancamentos', 'faturas', 'rendas', 'fixas', 'orcamento', 'consignado', 'antecipacoes',
+  'cartoes', 'lancamentos', 'faturas', 'consignado', 'antecipacoes',
   'metas', 'investimentos', 'veiculos', 'eventos', 'cenarios', 'historicoPlano', 'fechamentoMes', 'config',
 ] as const;

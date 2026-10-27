@@ -61,3 +61,20 @@ export function formatarData(data: Data): string {
   const [a, m, d] = data.split('-');
   return `${d}/${m}/${a}`;
 }
+
+/** Dias de `de` até `ate` (pode ser negativo). */
+export function diasEntre(de: Data, ate: Data): number {
+  const [a1, m1, d1] = de.split('-').map(Number) as [number, number, number];
+  const [a2, m2, d2] = ate.split('-').map(Number) as [number, number, number];
+  return Math.round((Date.UTC(a2, m2 - 1, d2) - Date.UTC(a1, m1 - 1, d1)) / 86_400_000);
+}
+
+/** Data de hoje no fuso local, como 'YYYY-MM-DD'. */
+export function hojeLocal(agora = new Date()): Data {
+  return montarData(agora.getFullYear(), agora.getMonth() + 1, agora.getDate());
+}
+
+/** '2026-12-12' → '12/12' */
+export function formatarDiaMes(data: Data): string {
+  return `${data.slice(8, 10)}/${data.slice(5, 7)}`;
+}

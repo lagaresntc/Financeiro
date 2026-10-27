@@ -11,8 +11,10 @@ export interface CartaoCfg {
   nome: string;
   diaFechamento: number;
   diaVencimento: number;
-  /** Mudanças de vencimento ao longo do tempo (ex.: Croma passa a vencer dia 12 em dez/2026). */
+  /** Mudanças de vencimento ao longo do tempo (ex.: passa a vencer dia 12 a partir de dez/2026). */
   vencimentos?: { aPartirDe: Mes; dia: number }[];
+  /** Mensalidade isenta se a fatura passar de um gasto mínimo OU houver um saldo guardado mínimo. */
+  isencao?: { mensalidadeCentavos: Centavos; gastoMinCentavos?: Centavos; saldoMinCentavos?: Centavos; metaIdSaldo?: string };
 }
 
 export type ChaveExtra = 'abono' | 'decimoTerceiro' | 'licenca' | 'vendas' | 'consignadoLiberado';
@@ -104,6 +106,8 @@ export interface ParcelaEmAndamento {
   parcelaAtual: number;
   totalParcelas: number;
   competenciaParcelaAtual: Mes;
+  /** Lançada depois do saldo informado da fatura: soma mesmo nos meses com fatura informada. */
+  somaNaInformada?: boolean;
 }
 
 export interface FaturaInformada {

@@ -182,7 +182,7 @@ export function projetar(
     );
     const parcelas = somar(
       situacao.parcelas
-        .filter(pa => !cartoesInformados.has(pa.cartaoId))
+        .filter(pa => pa.somaNaInformada || !cartoesInformados.has(pa.cartaoId))
         .map(pa => {
           const k = pa.parcelaAtual + mesesEntre(pa.competenciaParcelaAtual, mes);
           return k >= pa.parcelaAtual && k <= pa.totalParcelas ? pa.valorParcelaCentavos : 0;

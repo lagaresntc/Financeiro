@@ -9,6 +9,11 @@ export default defineConfig({
     react(),
     VitePWA({
       registerType: 'autoUpdate',
+      workbox: {
+        // Inclui o worker do pdf.js (.mjs, ~1,4 MB) para importar PDF offline.
+        globPatterns: ['**/*.{js,mjs,css,html,svg,webmanifest}'],
+        maximumFileSizeToCacheInBytes: 4 * 1024 * 1024,
+      },
       includeAssets: ['icone.svg'],
       manifest: {
         name: 'Gerente Financeiro',

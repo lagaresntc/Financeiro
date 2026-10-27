@@ -1,7 +1,7 @@
 import type { BancoFinanceiro, CenarioDb, LancamentoDb } from './schema';
 import { TABELAS } from './schema';
 import type { DadosIniciais } from './mapearSeed';
-import { mapearCartoes, mapearFixas, mapearRendas, parametrosDoCenario, situacaoDoSeed } from './mapearSeed';
+import { mapearCartoes, parametrosDoCenario, situacaoDoSeed } from './mapearSeed';
 
 const CHAVE_SEED = 'seedAplicadoEm';
 
@@ -53,7 +53,12 @@ export async function aplicarSeed(db: BancoFinanceiro, dados: DadosIniciais, ago
         faturaRef: p.competenciaParcelaAtual,
         origem: 'seed' as const,
       })),
-      ...dados.lancamentosRecentes.map(l => {
+      // Compras recentes parceladas que já aparecem em parcelasEmAndamento não entram de novo.
+      ...dados.lancamentosRecentes.filter(l => {
+        const n = l.parcelas ?? 1;
+        return n === 1 || !dados.parcelasEmAndamento.some(p =>
+          p.cartaoId === l.forma && p.totalParcelas === n && Math.abs(p.valorParcelaCentavos * n - l.valorCentavos) <= n);
+      }).map(l => {
         const n = l.parcelas ?? 1;
         return {
           data: l.data,
@@ -69,9 +74,6 @@ export async function aplicarSeed(db: BancoFinanceiro, dados: DadosIniciais, ago
     ];
     await db.lancamentos.bulkAdd(lancamentos);
 
-    await db.rendas.bulkAdd(mapearRendas(dados));
-    await db.fixas.bulkAdd(mapearFixas(dados));
-    await db.orcamento.bulkAdd(Object.entries(dados.orcamentoVariavelMensal).map(([categoria, valorMensalCentavos]) => ({ categoria, valorMensalCentavos })));
 
     await db.consignado.add({
       contrato: 'bb',
@@ -80,6 +82,7 @@ export async function aplicarSeed(db: BancoFinanceiro, dados: DadosIniciais, ago
       totalParcelas: dados.consignado.totalParcelas,
       taxaMes: dados.consignado.taxaMes,
       estado: situacao.consignado,
+      estadoEm: situacao.mesInicial,
     });
     await db.antecipacoes.bulkAdd(dados.consignado.antecipacoes.map(a => ({ ...a })));
 
