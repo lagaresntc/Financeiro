@@ -2,7 +2,7 @@ import { createContext, useContext, useMemo, type ReactNode } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '../db/db';
 import type {
-  AntecipacaoDb, CartaoDb, CenarioDb, ConsignadoDb, EventoDb, FaturaDb, FechamentoMesDb, LancamentoDb, MetaDb,
+  AntecipacaoDb, AporteDb, CartaoDb, CenarioDb, ConsignadoDb, EventoDb, FaturaDb, FechamentoMesDb, LancamentoDb, MetaDb,
   InvestimentoDb, VeiculoDb,
 } from '../db/schema';
 import { carregarSituacao, faturaAbertaHoje, gastosDoCiclo, itensDaFatura, cartaoCfg } from '../db/situacao';
@@ -29,6 +29,7 @@ export interface Dados {
   investimentos: InvestimentoDb[];
   veiculos: VeiculoDb[];
   regrasCategoria: RegraCategoria[];
+  aportes: AporteDb[];
   situacao: SituacaoAtual;
   projecao: Projecao;
   ciclo: Ciclo;
@@ -44,16 +45,17 @@ export const HORIZONTE_MESES = 60;
 export function ProvedorDados({ children, carregando }: { children: ReactNode; carregando: ReactNode }) {
   const hoje = hojeLocal();
   const brutos = useLiveQuery(async () => {
-    const [cartoes, lancamentos, faturas, metas, eventos, cenarios, consignados, antecipacoes, fechamentos, investimentos, veiculos, regras] =
+    const [cartoes, lancamentos, faturas, metas, eventos, cenarios, consignados, antecipacoes, fechamentos, investimentos, veiculos, regras, aportes] =
       await Promise.all([
         db.cartoes.toArray(), db.lancamentos.toArray(), db.faturas.toArray(), db.metas.orderBy('ordem').toArray(),
         db.eventos.orderBy('data').toArray(), db.cenarios.toArray(), db.consignado.toArray(), db.antecipacoes.toArray(),
         db.fechamentoMes.toArray(), db.investimentos.toArray(), db.veiculos.toArray(), db.config.get('regrasCategoria'),
+        db.aportes.orderBy('mes').reverse().toArray(),
       ]);
     const situacao = await carregarSituacao(db, hoje);
     return {
       cartoes, lancamentos, faturas, metas, eventos, cenarios, consignado: consignados[0], antecipacoes, fechamentos,
-      investimentos, veiculos, regrasCategoria: (regras?.valor as RegraCategoria[] | undefined) ?? REGRAS_PADRAO, situacao,
+      investimentos, veiculos, aportes, regrasCategoria: (regras?.valor as RegraCategoria[] | undefined) ?? REGRAS_PADRAO, situacao,
     };
   }, [hoje]);
 

@@ -7,6 +7,7 @@ import { proximosEventos } from '../../domain/alertas';
 import { ID_CONSIGNADO } from '../../domain/projecao';
 import { parcelasAbertas, quitado, saldoParaQuitar } from '../../domain/consignado';
 import { cartaoCfg, faturaAbertaHoje, totalDaFatura } from '../../db/situacao';
+import { calcularTetos, temRenda } from '../tetos';
 
 export default function Inicio() {
   const d = useDados();
@@ -19,6 +20,7 @@ export default function Inicio() {
   ).slice(0, 6);
 
   const temConsignado = !!d.consignado && !quitado(d.situacao.consignado);
+  const tetos = temRenda(d) ? calcularTetos(d) : new Map();
   const metasComAlvo = d.parametros.destinos
     .filter(x => x.metaId !== ID_CONSIGNADO && (x.alvoCentavos ?? 0) > 0)
     .sort((a, b) => a.ordem - b.ordem);
@@ -57,7 +59,14 @@ export default function Inicio() {
                       Fecha {formatarDiaMes(fechamento)}{dias <= 3 ? ` (${dias === 0 ? 'hoje' : `em ${dias}d`})` : ''} · vence {formatarDiaMes(vencimento)}
                     </span>
                   </div>
-                  <strong><Reais v={totalDaFatura(cfg, comp, d.lancamentos, fatura)} /></strong>
+                  <div className="coluna" style={{ gap: 2, alignItems: 'flex-end' }}>
+                    <strong><Reais v={totalDaFatura(cfg, comp, d.lancamentos, fatura)} /></strong>
+                    {tetos.get(`${c.id}|${comp}`) && (
+                      <span className={`pequeno ${tetos.get(`${c.id}|${comp}`)!.restaCentavos < 0 ? 'vermelho' : 'fraco'}`}>
+                        máx <Reais v={Math.max(0, tetos.get(`${c.id}|${comp}`)!.tetoCentavos)} />
+                      </span>
+                    )}
+                  </div>
                 </a>
               );
             })}

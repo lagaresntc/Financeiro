@@ -1,12 +1,15 @@
 import type { Centavos, CartaoCfg, Data, Mes, ParametrosPlano, SituacaoAtual } from './tipos';
-import { mesesEntre } from './datas';
+import { mesDe, mesesEntre, somarMeses } from './datas';
 import { competenciaDaCompra, datasDaFatura, melhorDiaDeCompra } from './faturas';
 import { projetar, type Projecao } from './projecao';
 
 export interface CompraSimulada {
   valorCentavos: Centavos;
   parcelas: number;
-  /** id do cartão; 'pix' ou 'dinheiro' = à vista no mês da compra */
+  /**
+   * id do cartão; 'pix' ou 'dinheiro' = à vista no mês da compra;
+   * qualquer outra forma (ex.: 'carne') com parcelas > 1 = parcelas mensais a partir do mês seguinte.
+   */
   forma: string;
   data: Data;
   descricao?: string;
@@ -14,7 +17,10 @@ export interface CompraSimulada {
 
 export interface LinhaSimulacao {
   mes: Mes;
+  /** Número da parcela que cai neste mês (1-based). */
+  parcela: number;
   parcelaCentavos: Centavos;
+  rendaCentavos: Centavos;
   folgaAntesCentavos: Centavos;
   folgaDepoisCentavos: Centavos;
   metaAntesCentavos: Centavos;
@@ -52,9 +58,12 @@ export function simularCompra(
   horizonteMeses = 60,
 ): ResultadoSimulacao {
   const cartao: CartaoCfg | undefined = situacao.cartoes.find(c => c.id === compra.forma);
-  const n = cartao ? Math.max(1, compra.parcelas) : 1;
+  const aVista = !cartao && (compra.forma === 'pix' || compra.forma === 'dinheiro');
+  const n = aVista ? 1 : Math.max(1, compra.parcelas);
   const parcela = valorDaParcela(compra.valorCentavos, n);
-  const primeira = cartao ? competenciaDaCompra(cartao, compra.data) : compra.data.slice(0, 7);
+  const primeira = cartao
+    ? competenciaDaCompra(cartao, compra.data)
+    : n > 1 ? somarMeses(mesDe(compra.data), 1) : mesDe(compra.data);
 
   const antes = projetar(situacao, parametros, { horizonteMeses });
   const situacaoDepois: SituacaoAtual = cartao
@@ -72,7 +81,12 @@ export function simularCompra(
         ...situacao,
         eventosConhecidos: [
           ...situacao.eventosConhecidos,
-          { data: compra.data, descricao: compra.descricao ?? 'Simulação', valorCentavos: compra.valorCentavos, tipo: 'saida' },
+          ...Array.from({ length: n }, (_, i) => ({
+            data: n > 1 ? `${somarMeses(primeira, i)}-10` : compra.data,
+            descricao: compra.descricao ?? 'Simulação',
+            valorCentavos: parcela,
+            tipo: 'saida' as const,
+          })),
         ],
       };
   const depois = projetar(situacaoDepois, parametros, { horizonteMeses });
@@ -85,7 +99,9 @@ export function simularCompra(
     if (!a || !d) continue;
     linhas.push({
       mes: a.mes,
-      parcelaCentavos: cartao ? parcela : compra.valorCentavos,
+      parcela: i + 1,
+      parcelaCentavos: parcela,
+      rendaCentavos: a.rendaCentavos,
       folgaAntesCentavos: a.folgaCentavos,
       folgaDepoisCentavos: d.folgaCentavos,
       metaAntesCentavos: a.metaCentavos,
@@ -124,4 +140,34 @@ export function simularCompra(
     primeiraCompetenciaNoMelhorDia: cartao && melhorDia ? competenciaDaCompra(cartao, melhorDia) : null,
     projecaoDepois: depois,
   };
+}
+
+export interface OpcaoParcelamento {
+  parcelas: number;
+  valorParcelaCentavos: Centavos;
+  cabe: boolean;
+  comeDaMetaCentavos: Centavos;
+  /** Maior atraso entre as metas, em meses. */
+  atrasoMaximo: number;
+  ultimoMes: Mes;
+}
+
+/** Compara a mesma compra em vários parcelamentos (1x, 2x, 3x…). */
+export function compararParcelamentos(
+  situacao: SituacaoAtual,
+  parametros: ParametrosPlano,
+  compra: Omit<CompraSimulada, 'parcelas'>,
+  opcoes: number[] = [1, 2, 3, 4, 6, 10, 12],
+): OpcaoParcelamento[] {
+  return opcoes.map(n => {
+    const r = simularCompra(situacao, parametros, { ...compra, parcelas: n });
+    return {
+      parcelas: n,
+      valorParcelaCentavos: r.valorParcelaCentavos,
+      cabe: r.cabe,
+      comeDaMetaCentavos: r.comeDaMetaCentavos,
+      atrasoMaximo: Math.max(0, ...Object.values(r.atrasos)),
+      ultimoMes: somarMeses(r.primeiraCompetencia, n - 1),
+    };
+  });
 }

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { ConsignadoCfg, EstadoConsignado } from './tipos';
-import { antecipar, custoParcela, pagarFolha, parcelasAbertas, quitado, saldoNominal, saldoParaQuitar } from './consignado';
+import { antecipar, custoParcela, pagarFolha, parcelasAbertas, projetarConsignado, quitado, saldoNominal, saldoParaQuitar } from './consignado';
 
 // Contrato fictício: parcela de R$ 100, 2% ao mês, k = 100 (custo = nominal quando t = m).
 const cfg: ConsignadoCfg = { parcelaCentavos: 10000, k: 100, base: 1.02, mesBase: '2026-01' };
@@ -72,5 +72,27 @@ describe('desconto em folha', () => {
     const r = pagarFolha(cfg, ultimo);
     expect(r.descontadoCentavos).toBe(3000);
     expect(quitado(r.estado)).toBe(true);
+  });
+});
+
+describe('projeção só do consignado', () => {
+  it('sem amortizar, a folha quita uma por mês', () => {
+    const r = projetarConsignado(cfg, estado, '2026-01');
+    // 8 parcelas abertas em jan (a folha de jan já descontou): a folha paga uma por mês, de fev a set.
+    expect(r.mesQuitacao).toBe('2026-09');
+    expect(r.meses[0]!.parcelasAbertas).toBe(8);
+  });
+
+  it('amortizar todo mês acaba antes e paga menos juros', () => {
+    const so = projetarConsignado(cfg, estado, '2026-01');
+    const com = projetarConsignado(cfg, estado, '2026-01', { extraMensalCentavos: 10000 });
+    expect(com.mesQuitacao! < so.mesQuitacao!).toBe(true);
+    expect(com.jurosCentavos).toBeLessThan(so.jurosCentavos);
+  });
+
+  it('amortização única agora', () => {
+    const r = projetarConsignado(cfg, estado, '2026-01', { extraAgoraCentavos: 1_000_000 });
+    expect(r.mesQuitacao).toBe('2026-01');
+    expect(r.meses).toHaveLength(1);
   });
 });

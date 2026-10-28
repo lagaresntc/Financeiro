@@ -59,6 +59,8 @@ export interface Destino {
   ordem: number;
   /** Sem alvo = recebe tudo o que sobrar (ex.: investimentos). Ignorado para o consignado. */
   alvoCentavos?: Centavos;
+  /** Mês em que você quer a meta pronta (para calcular quanto guardar por mês). */
+  prazo?: Mes;
 }
 
 export type MetaDoMes = Centavos | '13o' | 'sobra';

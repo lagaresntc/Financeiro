@@ -1,7 +1,9 @@
 import { useState } from 'react';
 import { db } from '../../db/db';
 import { useDados, type Dados } from '../dados';
-import { CampoValor, Reais, Topo, toast } from '../componentes';
+import { Barra, CampoValor, Reais, Topo, toast } from '../componentes';
+import { calcularTetos, temRenda } from '../tetos';
+import type { TetoFatura } from '../../domain/tetoFatura';
 import { href } from '../rotas';
 import type { CartaoDb } from '../../db/schema';
 import type { Mes } from '../../domain/tipos';
@@ -29,10 +31,15 @@ export default function Cartoes({ rota }: { rota: string[] }) {
   if (cartao && comp) return <DetalheFatura cartao={cartao} comp={comp} />;
   if (cartao) return <FaturasDoCartao cartao={cartao} />;
 
+  const tetos = calcularTetos(d, 1);
+  const semRenda = !temRenda(d);
   return (
     <main className="tela">
       <Topo titulo="Cartões" acao={<a className="botao pequeno secundario" href={href('ajustes', 'cartao', 'novo')}>+ Cartão</a>} />
       {d.cartoes.length === 0 && <p className="vazio">Nenhum cartão cadastrado.</p>}
+      {d.cartoes.length > 0 && semRenda && (
+        <p className="pequeno fraco">Cadastre sua renda no <a href={href('plano', 'editor')}>editor do plano</a> para ver até quanto cada fatura pode chegar.</p>
+      )}
       {d.cartoes.map(c => {
         const cfg = cartaoCfg(c);
         const aberta = faturaAbertaHoje(cfg, d.hoje);
@@ -46,6 +53,10 @@ export default function Cartoes({ rota }: { rota: string[] }) {
             <p className="pequeno fraco" style={{ marginBottom: 8 }}>
               Fecha dia {c.diaFechamento} · vence dia {c.diaVencimento}{c.limiteCentavos ? <> · limite <Reais v={c.limiteCentavos} /></> : null}
             </p>
+            {!semRenda && [aberta, somarMeses(aberta, 1)].map(m => {
+              const t = tetos.get(`${c.id}|${m}`);
+              return t ? <TetoDaFatura key={m} teto={t} /> : null;
+            })}
             <div className="lista">
               {comps.map(m => <LinhaFatura key={m} d={d} cartao={c} comp={m} />)}
             </div>
@@ -177,5 +188,23 @@ function DetalheFatura({ cartao, comp }: { cartao: CartaoDb; comp: Mes }) {
         )}
       </section>
     </main>
+  );
+}
+
+/** "Esta fatura pode chegar a R$ X sem estourar o mês." */
+function TetoDaFatura({ teto: t }: { teto: TetoFatura }) {
+  const estourou = t.restaCentavos < 0;
+  const semEspaco = t.tetoCentavos <= 0;
+  return (
+    <div className="coluna" style={{ gap: 4, padding: '8px 0' }}>
+      <div className="linha pequeno">
+        <span>Fatura de {formatarMes(t.competencia)}: máximo <strong><Reais v={Math.max(0, t.tetoCentavos)} /></strong></span>
+        <span className={estourou ? 'vermelho' : 'verde'}>
+          {semEspaco ? 'sem espaço no mês' : estourou ? <>passou <Reais v={-t.restaCentavos} /></> : <>cabem <Reais v={t.restaCentavos} /></>}
+        </span>
+      </div>
+      <Barra fracao={t.tetoCentavos > 0 ? t.atualCentavos / t.tetoCentavos : 1} nivel={estourou || semEspaco ? 'perigo' : t.atualCentavos > t.tetoCentavos * 0.8 ? 'atencao' : undefined} />
+      <span className="pequeno fraco">Já tem <Reais v={t.atualCentavos} /> nela. Acima do máximo, a fatura tira dinheiro da meta do mês.</span>
+    </div>
   );
 }

@@ -113,8 +113,9 @@ export function Passo({ valor, onChange, min = 1, max = 48, sufixo = '' }: {
   );
 }
 
-export function Barra({ fracao }: { fracao: number }) {
-  return <div className="barra"><div style={{ width: `${Math.round(Math.min(1, Math.max(0, fracao)) * 100)}%` }} /></div>;
+export function Barra({ fracao, nivel }: { fracao: number; nivel?: 'atencao' | 'perigo' }) {
+  const cor = nivel === 'perigo' ? 'var(--vermelho)' : nivel === 'atencao' ? 'var(--amarelo)' : undefined;
+  return <div className="barra"><div style={{ width: `${Math.round(Math.min(1, Math.max(0, fracao)) * 100)}%`, background: cor }} /></div>;
 }
 
 export function Aviso({ nivel, titulo, children }: { nivel: 'info' | 'atencao' | 'perigo' | 'ok'; titulo?: string; children?: ReactNode }) {

@@ -3,6 +3,7 @@ import { href } from '../rotas';
 
 const ITENS: [string, string, string][] = [
   ['📥', 'Importar fatura', 'importar'],
+  ['📈', 'Projeção mês a mês e checklist', 'projecao'],
   ['🎯', 'Cenários do plano', 'plano/cenarios'],
   ['✏️', 'Editor do plano', 'plano/editor'],
   ['💳', 'Cartões e faturas', 'cartoes'],

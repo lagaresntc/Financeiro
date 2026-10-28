@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { simularCompra, valorDaParcela } from './simulador';
+import { compararParcelamentos, simularCompra, valorDaParcela } from './simulador';
 import { parametros, situacao } from './fixturesTeste';
 
 describe('simulador de compra', () => {
@@ -45,5 +45,23 @@ describe('simulador de compra', () => {
     expect(r.linhas[0]!.mes).toBe('2027-01');
     expect(r.linhas[0]!.parcelaCentavos).toBe(50000);
     expect(r.melhorDia).toBeNull();
+  });
+});
+
+describe('parcelado sem cartão e comparação de parcelamentos', () => {
+  it('parcelado sem cartão: parcelas a partir do mês seguinte', () => {
+    const r = simularCompra(situacao(), parametros(), { valorCentavos: 60000, parcelas: 3, forma: 'carne', data: '2027-01-10' });
+    expect(r.linhas.map(l => [l.mes, l.parcela, l.parcelaCentavos])).toEqual([
+      ['2027-02', 1, 20000], ['2027-03', 2, 20000], ['2027-04', 3, 20000],
+    ]);
+    expect(r.linhas[0]!.folgaDepoisCentavos).toBe(r.linhas[0]!.folgaAntesCentavos - 20000);
+  });
+
+  it('compara parcelamentos: mais parcelas, parcela menor', () => {
+    const ops = compararParcelamentos(situacao(), parametros(), { valorCentavos: 300000, forma: 'cartao', data: '2027-01-10' }, [1, 3, 6]);
+    expect(ops.map(o => o.valorParcelaCentavos)).toEqual([300000, 100000, 50000]);
+    expect(ops[0]!.cabe).toBe(false);
+    expect(ops[2]!.cabe).toBe(true);
+    expect(ops[2]!.ultimoMes).toBe('2027-07');
   });
 });

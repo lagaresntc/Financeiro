@@ -71,6 +71,8 @@ export interface CenarioDb { id: string; nome: string; ativo: boolean; criadoEm:
 export interface HistoricoPlanoDb { id?: number; data: string; cenarioId: string; resumo: string }
 export interface FechamentoMesDb { competencia: Mes; planejadoGuardarCentavos: Centavos; guardadoRealCentavos: Centavos; gastoRealCentavos: Centavos }
 export interface ConfigDb { chave: string; valor: unknown }
+/** Quanto foi guardado numa meta num mês (registrado à mão). */
+export interface AporteDb { id?: number; metaId: string; mes: Mes; valorCentavos: Centavos; data: Data }
 
 // Rendas, contas fixas, orçamento e eventos do plano ficam dentro de cada cenário (ParametrosPlano):
 // cenários diferentes podem ter rendas diferentes, e o plano não pode ter dois lugares para o mesmo dado.
@@ -89,6 +91,7 @@ export class BancoFinanceiro extends Dexie {
   historicoPlano!: Table<HistoricoPlanoDb, number>;
   fechamentoMes!: Table<FechamentoMesDb, string>;
   config!: Table<ConfigDb, string>;
+  aportes!: Table<AporteDb, number>;
 
   constructor(nome = 'gerente-financeiro') {
     super(nome);
@@ -107,10 +110,11 @@ export class BancoFinanceiro extends Dexie {
       fechamentoMes: 'competencia',
       config: 'chave',
     });
+    this.version(2).stores({ aportes: '++id, metaId, mes' });
   }
 }
 
 export const TABELAS = [
   'cartoes', 'lancamentos', 'faturas', 'consignado', 'antecipacoes',
-  'metas', 'investimentos', 'veiculos', 'eventos', 'cenarios', 'historicoPlano', 'fechamentoMes', 'config',
+  'metas', 'investimentos', 'veiculos', 'eventos', 'cenarios', 'historicoPlano', 'fechamentoMes', 'config', 'aportes',
 ] as const;

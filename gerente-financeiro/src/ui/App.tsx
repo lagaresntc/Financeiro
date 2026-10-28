@@ -18,6 +18,8 @@ import Simular from './telas/Simular';
 import Importar from './telas/Importar';
 import Ajustes from './telas/Ajustes';
 import Mais from './telas/Mais';
+import Consignado from './telas/Consignado';
+import Projecao from './telas/Projecao';
 
 // Em desenvolvimento, oferece carregar o arquivo local. No build de produção ele nunca é embutido.
 const seedsDev = import.meta.env.DEV
@@ -56,12 +58,14 @@ function Telas() {
       conteudo = resto[0] === 'editor' ? <EditorPlano /> : resto[0] === 'cenarios' ? <Cenarios /> : <Plano />;
       break;
     case 'simular': conteudo = <Simular />; break;
+    case 'consignado': conteudo = <Consignado />; break;
+    case 'projecao': conteudo = <Projecao />; break;
     case 'importar': conteudo = <Importar />; break;
     case 'ajustes': conteudo = <Ajustes rota={resto} />; break;
     case 'mais': conteudo = <Mais />; break;
     default: conteudo = <Inicio />;
   }
-  const abaAtiva = ['importar', 'ajustes'].includes(tela ?? '') ? 'mais' : tela === 'lancar' ? 'inicio' : tela;
+  const abaAtiva = ['importar', 'ajustes'].includes(tela ?? '') ? 'mais' : tela === 'lancar' ? 'inicio' : tela === 'projecao' ? 'plano' : tela;
   return (
     <>
       {conteudo}
@@ -70,7 +74,8 @@ function Telas() {
         {[
           ['inicio', '🏠', 'Início'],
           ['cartoes', '💳', 'Cartões'],
-          ['plano', '🎯', 'Plano'],
+          ['plano', '🎯', 'Metas'],
+          ['consignado', '🏦', 'Consignado'],
           ['simular', '🧮', 'Simular'],
           ['mais', '☰', 'Mais'],
         ].map(([id, icone, nome]) => (

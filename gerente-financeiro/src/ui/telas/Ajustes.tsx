@@ -222,7 +222,7 @@ function EditorCartao({ id }: { id: string }) {
       await db.cartoes.put(final);
     });
     toast('Cartão salvo');
-    ir('ajustes');
+    ir('cartoes');
   }
 
   return (
@@ -332,7 +332,7 @@ function EditorConsignado() {
       }
     });
     toast('Consignado salvo');
-    ir('plano');
+    ir('consignado');
   }
 
   const mesBaseAjuda = 'm = meses desde o mês-base. Vazio: a menor parcela aberta custa o valor cheio neste mês. Com k e base calibrados no extrato, os custos batem com o banco.';
